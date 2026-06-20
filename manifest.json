@@ -1,0 +1,10 @@
+{
+  "id": "duckdata",
+  "name": "DuckData",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Query and visualize vault/markdown data with embedded duckdata code blocks, powered by DuckDB-WASM.",
+  "author": "Hui LIU",
+  "authorUrl": "https://github.com/atliuhui",
+  "isDesktopOnly": true
+}
