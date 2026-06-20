@@ -1,4 +1,4 @@
-import { load, YAMLException } from 'js-yaml';
+import { parseYaml } from 'obsidian';
 import type { DuckDataSpec, DuckDataType } from './types';
 
 const SUPPORTED_TYPES: readonly DuckDataType[] = ['table', 'chart'] as const;
@@ -6,16 +6,14 @@ const SUPPORTED_TYPES: readonly DuckDataType[] = ['table', 'chart'] as const;
 export function parseDuckDataBlock(source: string): DuckDataSpec {
   let raw: unknown;
   try {
-    raw = load(source);
+    raw = parseYaml(source);
   } catch (err) {
-    if (err instanceof YAMLException) {
-      throw new Error(
-        `${err.message}\n\nHint: YAML reserves a few leading characters in plain scalars ` +
-        `(\`@\`, \`#\`, \`*\`, \`&\`, \`!\`, \`%\`, \`>\`, \`|\`). ` +
-        `Quote the value, e.g. datasource: "#sales" or datasource: 'Assets/iris.csv'.`,
-      );
-    }
-    throw err;
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `${msg}\n\nHint: YAML reserves a few leading characters in plain scalars ` +
+      `(\`@\`, \`#\`, \`*\`, \`&\`, \`!\`, \`%\`, \`>\`, \`|\`). ` +
+      `Quote the value, e.g. datasource: "#sales" or datasource: 'Assets/iris.csv'.`,
+    );
   }
   if (raw == null || typeof raw !== 'object' || Array.isArray(raw)) {
     throw new Error('duckdata block must be a YAML mapping with `type` and `sql` keys.');
@@ -61,8 +59,8 @@ export function parseDuckDataBlock(source: string): DuckDataSpec {
   return {
     type: type as DuckDataType,
     sql,
-    ...(data !== undefined ? { data: data as string } : {}),
-    ...(datasource !== undefined ? { datasource: datasource as string } : {}),
+    ...(data !== undefined ? { data } : {}),
+    ...(datasource !== undefined ? { datasource } : {}),
     ...(chart !== undefined ? { chart: chart as Record<string, unknown> } : {}),
   };
 }

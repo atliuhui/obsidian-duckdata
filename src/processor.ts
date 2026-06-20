@@ -112,18 +112,18 @@ async function runWithTimeout<T>(
   onTimeout: () => void,
 ): Promise<T> {
   if (timeoutMs <= 0) return work();
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  let timer: number | undefined;
   try {
     return await Promise.race<T>([
       work(),
       new Promise<T>((_, reject) => {
-        timer = setTimeout(() => {
+        timer = window.setTimeout(() => {
           onTimeout();
           reject(new Error(`Query timed out after ${timeoutMs} ms (configure under Settings → DuckData).`));
         }, timeoutMs);
       }),
     ]);
   } finally {
-    if (timer !== undefined) clearTimeout(timer);
+    if (timer !== undefined) window.clearTimeout(timer);
   }
 }

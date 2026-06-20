@@ -53,8 +53,8 @@ use([
 
 type ChartTheme = 'light' | 'dark';
 
-function currentTheme(): ChartTheme {
-  return document.body.classList.contains('theme-dark') ? 'dark' : 'light';
+function currentTheme(doc: Document): ChartTheme {
+  return doc.body.classList.contains('theme-dark') ? 'dark' : 'light';
 }
 
 export interface ChartInstance {
@@ -70,7 +70,10 @@ export interface ChartInstance {
  * them all on unload.
  */
 export function createChart(dom: HTMLElement, option: Record<string, unknown>): ChartInstance {
-  let theme = currentTheme();
+  // Use the document that owns `dom` so charts opened in an Obsidian popout
+  // window still observe theme changes on the correct <body>.
+  const doc = dom.ownerDocument;
+  let theme = currentTheme(doc);
   let lastOption = option;
   let chart: EChartsType = init(dom, theme);
   chart.setOption(lastOption);
@@ -81,14 +84,14 @@ export function createChart(dom: HTMLElement, option: Record<string, unknown>): 
   resizeObs.observe(dom);
 
   const themeObs = new MutationObserver(() => {
-    const next = currentTheme();
+    const next = currentTheme(doc);
     if (next === theme) return;
     theme = next;
     chart.dispose();
     chart = init(dom, theme);
     chart.setOption(lastOption);
   });
-  themeObs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  themeObs.observe(doc.body, { attributes: true, attributeFilter: ['class'] });
 
   const instance: ChartInstance = {
     dispose() {

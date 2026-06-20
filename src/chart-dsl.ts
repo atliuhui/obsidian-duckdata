@@ -128,10 +128,13 @@ function mergeWithDataset(option: Option, rows: ChartRow[]): Option {
   const userDataset = option.dataset;
   let dataset: unknown;
   if (Array.isArray(userDataset)) {
-    const hasData = userDataset.some(
-      (d) => d && typeof d === 'object' && (d as Record<string, unknown>).id === 'data',
+    // Array.isArray narrows to any[]; widen to unknown[] so spreads/iteration
+    // are not treated as unsafe-any operations by typescript-eslint.
+    const arr = userDataset as unknown[];
+    const hasData = arr.some(
+      (d) => !!d && typeof d === 'object' && (d as Record<string, unknown>).id === 'data',
     );
-    dataset = hasData ? userDataset : [primary, ...userDataset];
+    dataset = hasData ? arr : [primary, ...arr];
   } else if (userDataset && typeof userDataset === 'object') {
     const id = (userDataset as Record<string, unknown>).id;
     dataset = id === 'data' ? [userDataset] : [primary, userDataset];

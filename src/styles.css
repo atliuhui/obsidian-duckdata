@@ -26,3 +26,8 @@
   font-size: 0.85em;
   line-height: 1.4;
 }
+
+.duckdata-chart {
+  width: 100%;
+  height: var(--duckdata-chart-height, 300px);
+}

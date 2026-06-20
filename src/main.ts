@@ -15,13 +15,15 @@ export default class DuckDataPlugin extends Plugin {
     );
   }
 
-  async onunload(): Promise<void> {
+  onunload(): void {
+    // Plugin.onunload is typed `void`, so we fire-and-forget the async DuckDB
+    // teardown. Errors are swallowed because the renderer is going away anyway.
     disposeAllCharts();
-    await disposeDuckDB();
+    void disposeDuckDB();
   }
 
   async loadSettings(): Promise<void> {
-    const saved = await this.loadData();
+    const saved = (await this.loadData()) as Partial<DuckDataSettings> | null;
     this.settings = { ...DEFAULT_SETTINGS, ...(saved ?? {}) };
   }
 

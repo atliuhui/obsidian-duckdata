@@ -38,10 +38,13 @@ export function renderTable(parent: HTMLElement, table: Table): void {
 function formatCell(value: unknown, field: Field): string {
   if (value === null || value === undefined) return '';
 
-  const typeId = field.type.typeId;
+  // `Field.type` is generic with an `any` default in apache-arrow, so we narrow
+  // it once into a structural shape and drive the rest of the function off that.
+  const dataType = field.type as { typeId: number; unit?: DateUnit | TimeUnit };
+  const typeId = dataType.typeId;
 
   if (typeId === Type.Date) {
-    const unit = (field.type as { unit?: DateUnit }).unit;
+    const unit = dataType.unit as DateUnit | undefined;
     const ms = unit === DateUnit.DAY
       ? Number(value) * 86400000
       : Number(value);
@@ -49,7 +52,7 @@ function formatCell(value: unknown, field: Field): string {
   }
 
   if (typeId === Type.Timestamp) {
-    const unit = (field.type as { unit?: TimeUnit }).unit;
+    const unit = dataType.unit as TimeUnit | undefined;
     const ms = timestampToMs(value, unit);
     return formatDateTime(new Date(ms));
   }

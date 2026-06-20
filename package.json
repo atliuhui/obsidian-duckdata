@@ -1,6 +1,6 @@
 {
   "name": "duckdata",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Query and visualize vault/markdown data with embedded duckdata code blocks, powered by DuckDB-WASM.",
   "main": "main.js",
   "license": "MIT",
@@ -17,13 +17,10 @@
   "dependencies": {
     "@duckdb/duckdb-wasm": "1.32.0",
     "apache-arrow": "^17.0.0",
-    "echarts": "^6.1.0",
-    "js-yaml": "^4.1.0"
+    "echarts": "^6.1.0"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.10.0",
-    "builtin-modules": "^4.0.0",
     "esbuild": "^0.24.0",
     "obsidian": "latest",
     "tslib": "^2.8.0",

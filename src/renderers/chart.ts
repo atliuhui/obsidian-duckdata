@@ -23,8 +23,9 @@ export function renderChart(
     : `${DEFAULT_HEIGHT_PX}px`;
 
   const host = parent.createDiv({ cls: 'duckdata-chart' });
-  host.style.width = '100%';
-  host.style.height = height;
+  // Width is fixed via the .duckdata-chart class; height varies per block so
+  // we expose it via a CSS custom property to avoid inline style assignments.
+  host.setCssProps({ '--duckdata-chart-height': height });
 
   const option = buildOption(chartSpec, rows);
   createChart(host, option);

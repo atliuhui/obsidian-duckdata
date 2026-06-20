@@ -1,4 +1,5 @@
 import * as duckdb from '@duckdb/duckdb-wasm';
+import { requestUrl } from 'obsidian';
 
 export interface DuckConfig {
   /** Base URL that hosts `duckdb-{mvp,eh}.wasm` + matching workers. */
@@ -71,12 +72,20 @@ if (typeof globalThis.Buffer === 'undefined') {
 }
 `;
 
-async function fetchWithLabel(url: string, label: string): Promise<Response> {
-  const resp = await fetch(url);
-  if (!resp.ok) {
-    throw new Error(`${label} failed: ${resp.status} ${resp.statusText} (${url})`);
+async function fetchAsset(url: string, label: string): Promise<{ text: string; bytes: ArrayBuffer }> {
+  let resp;
+  try {
+    // Use Obsidian's requestUrl so we go through Electron's net stack (no CORS,
+    // works inside the renderer) instead of the browser fetch API.
+    resp = await requestUrl({ url });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`${label} failed: ${msg} (${url})`);
   }
-  return resp;
+  if (resp.status < 200 || resp.status >= 300) {
+    throw new Error(`${label} failed: HTTP ${resp.status} (${url})`);
+  }
+  return { text: resp.text, bytes: resp.arrayBuffer };
 }
 
 async function initDuckDB(config: DuckConfig, onStage?: StageReporter): Promise<DuckHandles> {
@@ -95,24 +104,23 @@ async function initDuckDB(config: DuckConfig, onStage?: StageReporter): Promise<
   const bundle = await duckdb.selectBundle(bundles);
 
   onStage?.('downloading worker');
-  const workerSrc = await (await fetchWithLabel(bundle.mainWorker!, 'fetch worker')).text();
+  const workerAsset = await fetchAsset(bundle.mainWorker!, 'fetch worker');
   const workerUrl = URL.createObjectURL(
-    new Blob([WORKER_SHIM, workerSrc], { type: 'text/javascript' }),
+    new Blob([WORKER_SHIM, workerAsset.text], { type: 'text/javascript' }),
   );
 
   onStage?.('downloading wasm');
-  const wasmBytes = await (await fetchWithLabel(bundle.mainModule!, 'fetch wasm')).arrayBuffer();
-  const wasmBlobUrl = URL.createObjectURL(new Blob([wasmBytes], { type: 'application/wasm' }));
+  const wasmAsset = await fetchAsset(bundle.mainModule!, 'fetch wasm');
+  const wasmBlobUrl = URL.createObjectURL(new Blob([wasmAsset.bytes], { type: 'application/wasm' }));
 
   onStage?.('starting worker');
   const worker = new Worker(workerUrl);
 
-  let workerErrorListener: ((ev: Event) => void) | null = null;
+  let workerErrorListener: ((ev: ErrorEvent) => void) | null = null;
   const workerErrorDuringInit = new Promise<never>((_, reject) => {
-    workerErrorListener = (ev: Event) => {
-      const e = ev as ErrorEvent;
-      const where = e.filename ? ` at ${e.filename}:${e.lineno}:${e.colno}` : '';
-      reject(new Error(`worker error: ${e.message || 'unknown'}${where}`));
+    workerErrorListener = (ev: ErrorEvent) => {
+      const where = ev.filename ? ` at ${ev.filename}:${ev.lineno}:${ev.colno}` : '';
+      reject(new Error(`worker error: ${ev.message || 'unknown'}${where}`));
     };
     worker.addEventListener('error', workerErrorListener, { once: true });
   });
@@ -146,7 +154,9 @@ async function initDuckDB(config: DuckConfig, onStage?: StageReporter): Promise<
   let duckVersion = 'unknown';
   try {
     const r = await conn.query('SELECT version() AS v');
-    duckVersion = String(r.toArray()[0].toJSON().v);
+    const first = r.toArray()[0] as { toJSON?: () => Record<string, unknown> } | undefined;
+    const row = first?.toJSON?.() ?? {};
+    duckVersion = String(row.v ?? 'unknown');
   } catch (err) {
     console.warn('[duckdata] version query failed:', err);
   }
