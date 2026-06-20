@@ -40,7 +40,8 @@ function formatCell(value: unknown, field: Field): string {
 
   // `Field.type` is generic with an `any` default in apache-arrow, so we narrow
   // it once into a structural shape and drive the rest of the function off that.
-  const dataType = field.type as { typeId: number; unit?: DateUnit | TimeUnit };
+  // `typeId` is typed as `Type` so enum comparisons below stay homogeneous.
+  const dataType = field.type as { typeId: Type; unit?: DateUnit | TimeUnit };
   const typeId = dataType.typeId;
 
   if (typeId === Type.Date) {

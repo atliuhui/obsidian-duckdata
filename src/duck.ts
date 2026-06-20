@@ -110,7 +110,7 @@ async function initDuckDB(config: DuckConfig, onStage?: StageReporter): Promise<
   );
 
   onStage?.('downloading wasm');
-  const wasmAsset = await fetchAsset(bundle.mainModule!, 'fetch wasm');
+  const wasmAsset = await fetchAsset(bundle.mainModule, 'fetch wasm');
   const wasmBlobUrl = URL.createObjectURL(new Blob([wasmAsset.bytes], { type: 'application/wasm' }));
 
   onStage?.('starting worker');

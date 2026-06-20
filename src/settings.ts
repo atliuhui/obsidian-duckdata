@@ -50,6 +50,15 @@ export class DuckDataSettingTab extends PluginSettingTab {
   }
 
   display(): void {
+    // `PluginSettingTab.display()` is marked @deprecated since Obsidian 1.13.0
+    // in favour of `getSettingDefinitions()`. We still implement it as the
+    // documented fallback for `minAppVersion` 1.5.0, but the body delegates to
+    // a private renderer so internal re-renders avoid calling the deprecated
+    // method recursively.
+    this.renderSettings();
+  }
+
+  private renderSettings(): void {
     const { containerEl } = this;
     containerEl.empty();
 
@@ -65,7 +74,7 @@ export class DuckDataSettingTab extends PluginSettingTab {
           .onChange(async (val) => {
             this.plugin.settings.cdnMirror = val as CdnMirror;
             await this.plugin.saveSettings();
-            this.display();
+            this.renderSettings();
           }),
       );
 

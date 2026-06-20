@@ -1,6 +1,6 @@
 {
   "name": "duckdata",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Query and visualize vault/markdown data with embedded duckdata code blocks, powered by DuckDB-WASM.",
   "main": "main.js",
   "license": "MIT",
